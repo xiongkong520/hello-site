@@ -1,0 +1,25 @@
+SDK=/usr/local/lib/android/sdk
+BT=/usr/local/lib/android/sdk/build-tools/37.0.0
+PLATFORM=/usr/local/lib/android/sdk/platforms/android-37.2/android.jar
+== javac ==
+Note: src/com/mimichong/eat/MainActivity.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+== d8 ==
+== aapt2 ==
+== 打包 dex ==
+packed: 7392 bytes
+== zipalign ==
+== 生成签名密钥 ==
+== 签名 ==
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+-rw-r--r-- 1 runner runner 17183 Nov 15 06:52 /home/runner/work/hello-site/hello-site/android/app.apk
+APK OK
