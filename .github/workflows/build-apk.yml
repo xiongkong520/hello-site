@@ -1,0 +1,41 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查环境
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/build-tools" || true
+          ls "$ANDROID_HOME/platforms" || true
+
+      - name: 编译 APK
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash android/build.sh 2>&1 | tee build.log
+
+      - name: 把 APK 和日志提交回仓库
+        if: always()
+        run: |
+          mkdir -p apk
+          cp build.log apk/build.log 2>/dev/null || echo "no build.log" > apk/build.log
+          cp android/app.apk apk/mimichong-eat.apk 2>/dev/null || echo "APK 未生成" >> apk/build.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A apk android/app.apk 2>/dev/null || true
+          git commit -m "chore: build apk [skip ci]" || echo "nothing to commit"
+          git push
