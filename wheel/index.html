@@ -185,6 +185,7 @@
       <div class="tools">
         <button class="mini" id="addBtn">+ 添加</button>
         <button class="mini" id="demoBtn">示例</button>
+        <button class="mini" id="myBtn">我的</button>
         <button class="mini danger" id="clearBtn">清空</button>
       </div>
     </div>
@@ -221,6 +222,7 @@
   var MAX = 24;
   var STORE = 'wheel.items.v1';
   var DEMO = ['火锅', '烧烤', '日料', '螺蛳粉', '汉堡', '麻辣烫'];
+  var MINE = ['卤肉饭', '6元快餐', '二四牛腩粉', '盖饭', '麦德旺', '得意快餐', '奶茶', '螺蛳粉', '鱼粉'];
   var items = [];
   var noRepeat = false;
   var used = [];           // 不重复模式下已抽到的索引
@@ -485,6 +487,10 @@
   }
 
   $('addBtn').addEventListener('click', addItem);
+  $('myBtn').addEventListener('click', function () {
+    items = MINE.slice(); used = [];
+    save(); renderItems(); toast('已载入我的清单');
+  });
   $('demoBtn').addEventListener('click', function () {
     items = DEMO.slice(); used = [];
     save(); renderItems(); toast('已载入示例');
