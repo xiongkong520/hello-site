@@ -129,6 +129,7 @@
   @keyframes pop{0%{transform:scale(.74);opacity:0}64%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
   .result .kicker{font-size:11px;letter-spacing:.22em;color:var(--ink-3);text-transform:uppercase}
   .result .name{font-size:30px;font-weight:800;letter-spacing:-.6px;margin:8px 0 4px;line-height:1.2;word-break:break-word}
+  .result .name img{width:104px;height:104px;border-radius:14px;display:block;margin:6px auto 2px;object-fit:cover}
   .result .hintline{font-size:12.5px;color:var(--ink-2);margin-bottom:16px}
   .rbtns{display:flex;gap:9px}
   .rbtns button{flex:1;height:44px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;
@@ -155,7 +156,6 @@
     </div>
     <div>
       <h1>转盘</h1>
-      <div class="sub">选项自己填 · 存在本地 · 可分享</div>
     </div>
     <button class="icon-btn" id="mute" title="音效开关" aria-label="音效开关">
       <svg id="muteIcon" viewBox="0 0 24 24" fill="none"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 8.6a4.6 4.6 0 0 1 0 6.8M18.6 6a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -176,7 +176,6 @@
       <span class="dots"><i></i><i></i><i></i></span>
       <span id="spinLabel">开始转</span>
     </button>
-    <div class="hint" id="hint">至少添加 2 个选项才能开始</div>
   </div>
 
   <div class="panel">
@@ -199,9 +198,6 @@
     </div>
   </div>
 
-  <footer>
-    数据只保存在这台设备的浏览器里，不上传服务器 · <a href="/food/" >干饭转盘</a>
-  </footer>
 </div>
 
 <div class="modal" id="modal">
@@ -386,6 +382,19 @@
       path.setAttribute('stroke-width', '1.6');
       slicesG.appendChild(path);
 
+      var blank = !String(name || '').trim();
+      if (blank) {
+        var sz = n <= 8 ? 27 : (n <= 14 ? 23 : 19);
+        var img = document.createElementNS(NS, 'image');
+        img.setAttribute('href', 'gummu.jpg');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', 'gummu.jpg');
+        img.setAttribute('width', sz);
+        img.setAttribute('height', sz);
+        img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        labelsG.appendChild(img);
+        labelEls.push({ el: img, mid: i * seg + seg / 2, type: 'img', size: sz });
+        return;
+      }
       var t = document.createElementNS(NS, 'text');
       t.setAttribute('text-anchor', 'middle');
       t.setAttribute('dominant-baseline', 'middle');
@@ -396,7 +405,7 @@
       var show = name.length > 8 ? name.slice(0, 8) + '…' : name;
       t.textContent = show;
       labelsG.appendChild(t);
-      labelEls.push({ el: t, mid: i * seg + seg / 2 });
+      labelEls.push({ el: t, mid: i * seg + seg / 2, type: 'text' });
     });
     layout(rotation);
   }
@@ -407,31 +416,26 @@
       var n = items.length;
       var rr = n > 12 ? R - 40 : R - 46;
       var p = pt(rr, L.mid + rot);
-      L.el.setAttribute('x', p[0].toFixed(2));
-      L.el.setAttribute('y', p[1].toFixed(2));
+      if (L.type === 'img') {
+        L.el.setAttribute('x', (p[0] - L.size / 2).toFixed(2));
+        L.el.setAttribute('y', (p[1] - L.size / 2).toFixed(2));
+      } else {
+        L.el.setAttribute('x', p[0].toFixed(2));
+        L.el.setAttribute('y', p[1].toFixed(2));
+      }
     }
   }
 
   /* ---------- 选项列表 UI ---------- */
-  var itemsEl = $('items'), countEl = $('count'), spinBtn = $('spin'), spinLabel = $('spinLabel'), hintEl = $('hint');
+  var itemsEl = $('items'), countEl = $('count'), spinBtn = $('spin'), spinLabel = $('spinLabel');
 
   function updateSpinState() {
-    var ok = items.length >= 2;
-    spinBtn.disabled = !ok || spinning;
-    hintEl.textContent = ok
-      ? (noRepeat ? '不重复模式：抽过的会暂时退出' : '点一下，交给运气')
-      : '至少添加 2 个选项才能开始';
+    spinBtn.disabled = items.length < 2 || spinning;
   }
 
   function renderItems() {
     countEl.textContent = items.length + ' / ' + MAX;
     itemsEl.innerHTML = '';
-    if (!items.length) {
-      var d = document.createElement('div');
-      d.className = 'empty';
-      d.textContent = '还没有选项。点右上角「+ 添加」或「示例」开始。';
-      itemsEl.appendChild(d);
-    }
     items.forEach(function (val, i) {
       var row = document.createElement('div');
       row.className = 'item';
@@ -444,6 +448,7 @@
       inp.type = 'text';
       inp.value = val;
       inp.maxLength = 40;
+      if (!inp.value.trim()) inp.placeholder = '滚木';
       inp.setAttribute('aria-label', '第 ' + (i + 1) + ' 个选项');
       inp.addEventListener('input', function () {
         items[i] = inp.value.slice(0, 40);
@@ -531,8 +536,7 @@
   }
 
   function spin() {
-    var valid = items.filter(function (s) { return s.trim(); });
-    if (valid.length < 2 || spinning) return;
+    if (items.length < 2 || spinning) return;
     spinning = true;
     spinBtn.classList.add('spinning');
     spinBtn.disabled = true;
@@ -573,8 +577,9 @@
     spinBtn.classList.remove('spinning');
     spinLabel.textContent = '再转一次';
     if (noRepeat && used.indexOf(idx) < 0) used.push(idx);
-    var name = (items[idx] || '').trim() || '（空）';
-    rname.textContent = name;
+    var name = String(items[idx] || '').trim();
+    if (!name) { rname.innerHTML = '<img src="gummu.jpg" alt="滚木">'; }
+    else { rname.textContent = name; }
     $('rhint').textContent = noRepeat
       ? '本次不重复 · 还剩 ' + Math.max(0, items.length - used.length) + ' 个没抽到'
       : '就是它了';
