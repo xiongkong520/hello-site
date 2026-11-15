@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f8fa">
+<title>安全验证 · mimichong.dev</title>
+<style>
+  :root{
+    --bg:#f7f8fa;
+    --card:#fff;
+    --line:#e4e8ef;
+    --line-strong:#d3d9e3;
+    --ink:#101828;
+    --ink-2:#475467;
+    --ink-3:#98a2b3;
+    --blue:#1a56db;
+    --green:#0f9f6e;
+    --cyan:#4de2d0;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 28px -12px rgba(16,24,40,.14);
+    --ease-out:cubic-bezier(.22,1,.36,1);
+    --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Noto Sans SC","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    display:flex;align-items:center;justify-content:center;padding:24px 18px;
+    transition:background .45s var(--ease-out);
+  }
+  body.dark{background:#05060a;color:#e8eef2}
+
+  .topline{position:fixed;top:0;left:0;right:0;height:2px;overflow:hidden;z-index:9;background:transparent}
+  .topline i{display:block;height:100%;width:34%;background:var(--blue);opacity:.9;transform:translateX(-100%);animation:sweep 2.4s var(--ease-out) infinite}
+  @keyframes sweep{0%{transform:translateX(-100%)}60%{transform:translateX(200%)}100%{transform:translateX(300%)}}
+
+  .shell{width:100%;max-width:420px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);overflow:hidden;
+    transform:translateY(10px);opacity:0;animation:cardIn .42s var(--ease-out) forwards;
+  }
+  @keyframes cardIn{to{transform:none;opacity:1}}
+
+  .brand{display:flex;align-items:center;gap:9px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .mark{width:26px;height:26px;border-radius:7px;background:#111827;display:grid;place-items:center;flex:none}
+  .mark svg{width:14px;height:14px;display:block}
+  .brand b{font-size:13.5px;font-weight:600}
+  .brand span{font-size:12px;color:var(--ink-3);margin-left:auto;font-variant-numeric:tabular-nums}
+
+  .body{padding:22px 18px 20px}
+  h1{font-size:15.5px;font-weight:600;margin-bottom:5px}
+  .lead{font-size:12.5px;color:var(--ink-2);line-height:1.55}
+
+  .verify-row{
+    margin-top:18px;display:flex;align-items:center;gap:11px;
+    border:1px solid var(--line-strong);border-radius:9px;padding:13px;background:#fcfcfd;
+    transition:border-color .25s var(--ease-out), background .25s var(--ease-out);
+  }
+  .verify-row.busy{border-color:rgba(26,86,219,.4);background:#f7faff}
+  .verify-row.ok{border-color:rgba(15,159,110,.45);background:#f4fbf8}
+  .box{width:21px;height:21px;border-radius:6px;border:1.5px solid #c8cfda;background:#fff;flex:none;display:grid;place-items:center;
+    transition:border-color .22s var(--ease-out),background .22s var(--ease-out)}
+  .box svg{width:13px;height:13px;display:block;overflow:visible}
+  .box svg path{fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .42s var(--ease-out) .05s}
+  .verify-row.ok .box{border-color:var(--green);background:var(--green);animation:bump .46s var(--spring)}
+  .verify-row.ok .box svg path{stroke-dashoffset:0}
+  @keyframes bump{0%{transform:scale(.86)}55%{transform:scale(1.09)}100%{transform:scale(1)}}
+  .v-label{font-size:13px;font-weight:500}
+  .v-sub{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .v-right{margin-left:auto;display:grid;place-items:center}
+  .spinner{width:16px;height:16px;animation:spin .9s linear infinite;display:none}
+  .verify-row.busy .spinner{display:block}
+  .spinner circle{fill:none;stroke:#7f9bd8;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:44;stroke-dashoffset:30}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .progress{height:3px;background:#eef1f6;border-radius:99px;overflow:hidden;margin-top:14px;opacity:0;transition:opacity .3s}
+  .progress.on{opacity:1}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1a56db,#4de2d0);border-radius:99px;transition:width .55s var(--ease-out)}
+
+  .counter{margin-top:8px;font-size:11.5px;color:var(--ink-3);display:flex;justify-content:space-between;opacity:0;transition:opacity .3s}
+  .counter.on{opacity:1}
+
+  .btn{
+    margin-top:18px;width:100%;height:42px;border:0;border-radius:9px;background:#111827;color:#fff;
+    font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .34s var(--spring),background .2s,opacity .2s;
+  }
+  .btn:hover{background:#1c2536}
+  .btn:active{transform:scale(.982)}
+  .btn[disabled]{opacity:.55;cursor:default}
+  .btn svg{width:14px;height:14px}
+
+  .foot{padding:12px 18px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:6px;
+    font-size:11.5px;color:var(--ink-3);justify-content:center}
+  .foot svg{width:11px;height:11px}
+
+  /* ================= 结果页 ================= */
+  .result{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:26px 20px;z-index:20;
+    background:
+      radial-gradient(70% 50% at 50% 42%, rgba(77,226,208,.10), transparent 70%),
+      #05060a;
+    overflow:hidden;
+  }
+  .result::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 1px,transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .result.on{display:flex;animation:flash .5s var(--ease-out)}
+  @keyframes flash{0%{opacity:0}18%{opacity:1}100%{opacity:1}}
+  .glow{position:absolute;width:120vw;height:60vh;top:-10vh;left:-10vw;pointer-events:none;
+    background:radial-gradient(50% 50% at 50% 50%,rgba(77,226,208,.16),transparent 70%);filter:blur(10px)}
+
+  .rwrap{position:relative;z-index:2;width:100%;max-width:480px;text-align:center}
+
+  .kicker{font-size:11.5px;letter-spacing:.32em;color:#4de2d0;text-transform:uppercase;margin-bottom:14px;opacity:.9}
+  .glitch{
+    position:relative;display:block;font-size:clamp(28px,8.6vw,42px);font-weight:800;letter-spacing:.02em;
+    line-height:1.18;color:#eaf6f4;text-shadow:0 0 22px rgba(77,226,208,.45);
+    animation:jitter 3.6s infinite steps(1);
+  }
+  .glitch::before,.glitch::after{
+    content:attr(data-text);position:absolute;left:0;right:0;top:0;
+  }
+  .glitch::before{color:#ff3b8d;transform:translate(-1.5px,0);opacity:.75;mix-blend-mode:screen;animation:gl1 2.6s infinite steps(1)}
+  .glitch::after{color:#3bffe3;transform:translate(1.5px,0);opacity:.75;mix-blend-mode:screen;animation:gl2 3.1s infinite steps(1)}
+  @keyframes gl1{0%,92%{clip-path:inset(0 0 0 0)}93%{clip-path:inset(22% 0 58% 0)}96%{clip-path:inset(62% 0 12% 0)}100%{clip-path:inset(0 0 0 0)}}
+  @keyframes gl2{0%,88%{clip-path:inset(0 0 0 0)}89%{clip-path:inset(48% 0 34% 0)}94%{clip-path:inset(8% 0 76% 0)}100%{clip-path:inset(0 0 0 0)}}
+  @keyframes jitter{0%,96%{transform:none}97%{transform:translate(1px,-1px)}98%{transform:translate(-1px,1px)}99%{transform:translate(1px,1px)}100%{transform:none}}
+
+  .meme{
+    display:block;width:132px;height:132px;margin:20px auto 6px;
+    image-rendering:pixelated;border-radius:6px;
+    filter:drop-shadow(0 0 16px rgba(77,226,208,.55)) drop-shadow(0 0 42px rgba(77,226,208,.22));
+  }
+
+  .report{
+    margin:16px auto 0;max-width:360px;border:1px solid rgba(77,226,208,.22);border-radius:12px;
+    background:rgba(8,16,18,.62);backdrop-filter:blur(6px);padding:13px 15px;text-align:left;
+    font-size:12px;color:#9fb9b6;
+  }
+  .report .r{display:flex;justify-content:space-between;gap:10px;padding:3.5px 0}
+  .report .r b{color:#e6fffb;font-weight:600;font-variant-numeric:tabular-nums}
+  .report .bar{height:5px;border-radius:99px;background:rgba(77,226,208,.14);margin-top:9px;overflow:hidden}
+  .report .bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#4de2d0,#ff3b8d);
+    animation:fill 1.1s var(--ease-out) .25s forwards}
+  @keyframes fill{to{width:100%}}
+
+  .rbtns{display:flex;gap:9px;margin-top:20px;justify-content:center;flex-wrap:wrap}
+  .rbtn{padding:10px 16px;border-radius:9px;font-size:12.5px;text-decoration:none;cursor:pointer;border:1px solid rgba(77,226,208,.3);
+    color:#c9eeeb;background:rgba(77,226,208,.08);transition:.2s}
+  .rbtn:hover{background:rgba(77,226,208,.16)}
+  .rbtn.ghost{border-color:rgba(255,255,255,.14);color:#8fa3a1;background:transparent}
+  .tiny{margin-top:14px;font-size:11px;color:#54696a}
+  .tiny a{color:#7f9b99;text-decoration:none;border-bottom:1px dashed rgba(127,155,153,.4)}
+
+  @media (max-width:380px){
+    .brand span{display:none}
+    .body{padding:18px 15px}
+    .meme{width:110px;height:110px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="topline" id="topline"><i></i></div>
+
+<div class="shell">
+  <div class="card" id="card">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 19.2 6v5.4c0 4.3-3 8.2-7.2 9.4-4.2-1.2-7.2-5.1-7.2-9.4V6L12 3.2Z" fill="#fff"/></svg>
+      </div>
+      <b>mimichong.dev</b>
+      <span id="clock">--:--</span>
+    </div>
+
+    <div class="body">
+      <h1>请完成安全验证</h1>
+      <p class="lead">此站点启用了访问保护，需要确认您是人类访客。</p>
+
+      <div class="verify-row" id="vrow">
+        <div class="box">
+          <svg viewBox="0 0 14 14"><path d="M2.6 7.4 5.6 10.4 11.4 4.6"/></svg>
+        </div>
+        <div>
+          <div class="v-label" id="vlabel">检测是否人类</div>
+          <div class="v-sub" id="vsub">点击下方按钮开始</div>
+        </div>
+        <div class="v-right">
+          <svg class="spinner" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+        </div>
+      </div>
+
+      <div class="progress" id="progress"><i id="pfill"></i></div>
+      <div class="counter" id="counter"><span id="ctext">初始化检测…</span><span id="cnum">0 / 3</span></div>
+
+      <button class="btn" id="start" type="button">
+        开始验证
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M12.5 6.5 18 12l-5.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <div class="foot">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="4.5" y="10" width="15" height="10" rx="2.2" stroke="currentColor" stroke-width="2"/></svg>
+      <span>受访问保护 · 会话 <span id="sess">—</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 结果页 -->
+<div class="result" id="result">
+  <div class="glow"></div>
+  <div class="rwrap">
+    <div class="kicker">ANOMALY DETECTED</div>
+    <span class="glitch" data-text="检测到惊天大区">检测到惊天大区</span>
+
+    <img class="meme" src="meme.webp" alt="卫戍协议" width="132" height="132">
+
+    <div class="report">
+      <div class="r"><span>检测结论</span><b>漏怪王</b></div>
+      <div class="r"><span>置信度</span><b>325%</b></div>
+      <div class="r"><span>风险等级</span><b style="color:#ff3b8d">极高</b></div>
+      <div class="bar"><i></i></div>
+    </div>
+
+    <div class="rbtns">
+      <button class="rbtn" onclick="location.reload()">重新检测</button>
+    </div>
+    <p class="tiny">别慌，这就是个恶作剧 · <a href="#" onclick="document.getElementById('result').classList.remove('on');document.body.classList.remove('dark');document.getElementById('card').style.display='';return false">再来一次</a></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var card = document.getElementById('card');
+  var vrow = document.getElementById('vrow');
+  var vlabel = document.getElementById('vlabel');
+  var vsub = document.getElementById('vsub');
+  var start = document.getElementById('start');
+  var progress = document.getElementById('progress');
+  var pfill = document.getElementById('pfill');
+  var counter = document.getElementById('counter');
+  var ctext = document.getElementById('ctext');
+  var cnum = document.getElementById('cnum');
+  var result = document.getElementById('result');
+  var topline = document.getElementById('topline');
+
+  function pad(n){return n<10?'0'+n:n}
+  (function tick(){
+    var d=new Date();
+    document.getElementById('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+    setTimeout(tick,20000);
+  })();
+  document.getElementById('sess').textContent=Math.random().toString(36).slice(2,10);
+
+  var steps = [
+    {t:'正在分析行为特征…', p:22},
+    {t:'正在比对设备指纹…', p:46},
+    {t:'正在验证您是否为人类…', p:71},
+    {t:'交叉校验 22 项信号…', p:92}
+  ];
+
+  start.addEventListener('click', function () {
+    start.disabled = true;
+    start.textContent = '验证进行中…';
+    vrow.classList.add('busy');
+    vlabel.textContent = '正在检测';
+    vsub.textContent = steps[0].t;
+    progress.classList.add('on');
+    counter.classList.add('on');
+
+    var i = 0;
+    var timer = setInterval(function () {
+      i++;
+      if (i <= steps.length) {
+        var s = steps[Math.min(i, steps.length) - 1];
+        vsub.textContent = s.t;
+        pfill.style.width = s.p + '%';
+        ctext.textContent = s.t.replace('…','');
+        cnum.textContent = Math.min(i, 3) + ' / 3';
+      }
+      if (i > steps.length) {
+        clearInterval(timer);
+        pfill.style.width = '100%';
+        ctext.textContent = '检测完成';
+        counter.style.opacity = '1';
+        vrow.classList.remove('busy');
+        vrow.classList.add('ok');
+        vlabel.textContent = '检测完成';
+        vsub.textContent = '正在生成检测报告…';
+        start.textContent = '正在跳转…';
+        if (topline) topline.style.display='none';
+        setTimeout(showResult, 620);
+      }
+    }, 620);
+  });
+
+  function showResult () {
+    card.style.transition = 'opacity .28s ease, transform .28s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-6px) scale(.99)';
+    setTimeout(function () {
+      card.style.display = 'none';
+      document.body.classList.add('dark');
+      document.body.style.background = '#05060a';
+      result.classList.add('on');
+      document.title = '检测到惊天大区';
+      if (navigator.vibrate) { try { navigator.vibrate([40, 60, 90]); } catch (e) {} }
+    }, 260);
+  }
+})();
+</script>
+</body>
+</html>

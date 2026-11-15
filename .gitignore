@@ -1,0 +1,5 @@
+# 构建产物与本地缓存，不进版本库
+dist/
+.wrangler/
+node_modules/
+*.zip

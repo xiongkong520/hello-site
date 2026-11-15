@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的第一个网页</title>
+<style>
+  :root{
+    --bg:#0f1117; --card:#171a23; --line:#242938;
+    --text:#e8eaf1; --muted:#9aa2b6; --accent:#5b8cff; --accent2:#8b5cf6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    font-family:-apple-system,"PingFang SC","Noto Sans SC",system-ui,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; padding:28px 18px 56px;
+    background-image:
+      radial-gradient(60% 50% at 12% 0%, rgba(91,140,255,.20), transparent 70%),
+      radial-gradient(50% 40% at 90% 8%, rgba(139,92,246,.16), transparent 70%);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px; margin:0 auto}
+  .hero{display:flex; align-items:center; gap:16px; margin-bottom:26px}
+  .avatar{
+    width:64px; height:64px; flex:none; border-radius:20px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid; place-items:center; font-size:26px; font-weight:700;
+    box-shadow:0 10px 30px rgba(91,140,255,.35);
+  }
+  h1{font-size:23px; letter-spacing:-.3px; margin-bottom:6px}
+  .sub{color:var(--muted); font-size:14px; line-height:1.6}
+  .tag{
+    display:inline-block; font-size:12px; color:#b7c6ff;
+    background:rgba(91,140,255,.14); border:1px solid rgba(91,140,255,.28);
+    padding:3px 9px; border-radius:999px; margin-top:9px;
+  }
+  .grid{display:grid; gap:12px; margin-top:22px}
+  @media(min-width:560px){ .grid{grid-template-columns:1fr 1fr} .card.wide{grid-column:1/-1} }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:16px 17px; transition:transform .18s ease, border-color .18s ease;
+  }
+  .card:hover{transform:translateY(-2px); border-color:#33405c}
+  .card h2{font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.4px; margin-bottom:10px}
+  .card p{font-size:14.5px; line-height:1.75; color:#cdd3e3}
+  .chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px}
+  .chip{font-size:12.5px; color:#c7cfe4; background:#1e2330; border:1px solid var(--line); padding:5px 10px; border-radius:9px}
+  ol{list-style:none; counter-reset:s}
+  ol li{counter-increment:s; position:relative; padding-left:30px; font-size:14px; line-height:1.7; color:#cdd3e3; margin-bottom:9px}
+  ol li::before{
+    content:counter(s); position:absolute; left:0; top:2px;
+    width:19px; height:19px; border-radius:6px; display:grid; place-items:center;
+    font-size:11px; font-weight:700; background:rgba(91,140,255,.16); color:#9db6ff;
+  }
+  footer{text-align:center; color:#5c6479; font-size:12.5px; margin-top:30px; line-height:1.8}
+  a{color:#9db6ff; text-decoration:none; border-bottom:1px solid rgba(157,182,255,.3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="avatar">你</div>
+    <div>
+      <h1>你好，我是 ____</h1>
+      <div class="sub">这是我用 <b>GitHub</b> + <b>Cloudflare Pages</b> 发布的第一个网页。</div>
+      <span class="tag">已上线 · 免费托管</span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>关于我</h2>
+      <p>改这一段的文字，它就是你的了。写一句你现在在做的事，或者一句喜欢的话。</p>
+    </div>
+
+    <div class="card">
+      <h2>我在学</h2>
+      <div class="chips">
+        <span class="chip">Git</span>
+        <span class="chip">GitHub</span>
+        <span class="chip">Cloudflare</span>
+        <span class="chip">HTML / CSS</span>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>这个网页是怎么上线的</h2>
+      <ol>
+        <li>本地写好这几个文件（index.html 就是全部）</li>
+        <li><b>git push</b> 到 GitHub 仓库</li>
+        <li>Cloudflare Pages 监听这个仓库，自动拉取并发布</li>
+        <li>以后每次 push，网站自动更新 —— 这就是 CI/CD 最小的样子</li>
+      </ol>
+    </div>
+
+    <div class="card wide">
+      <h2>下一步</h2>
+      <p>改标题、换颜色、加一张图片，然后 <b>git commit</b> + <b>git push</b>。几十秒后刷新网址，你会看到自己的改动真的上线了 —— 这一步的爽感是入门的关键。</p>
+    </div>
+
+  </div>
+
+  <footer>
+    由 GitHub 保存 · 由 Cloudflare Pages 发布<br>
+    <a href="https://github.com">github.com</a> &nbsp;·&nbsp;
+    <a href="https://pages.cloudflare.com">pages.cloudflare.com</a>
+  </footer>
+
+</div>
+</body>
+</html>
