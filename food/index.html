@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ee">
+<title>今天吃什么</title>
+<style>
+  :root{
+    --bg:#faf6ee;
+    --card:#fffdf9;
+    --line:#eae1d3;
+    --line-strong:#e0d4c2;
+    --ink:#231d16;
+    --ink-2:#6f6455;
+    --ink-3:#a89a86;
+    --accent:#e0512f;
+    --accent-2:#fdebe4;
+    --green:#1f6f5c;
+    --danger:#c8431f;
+    --shadow:0 1px 2px rgba(20,24,31,.04), 0 12px 30px -18px rgba(20,24,31,.25);
+    --ease:cubic-bezier(.22,1,.36,1);
+    --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);
+    font:14.5px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;justify-content:center;padding:20px 16px 34px;min-height:100dvh;
+  }
+  .shell{width:100%;max-width:440px}
+
+  /* 顶栏 */
+  .top{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .logo{width:28px;height:28px;border-radius:8px;background:var(--ink);display:grid;place-items:center;flex:none}
+  .logo svg{width:15px;height:15px}
+  .top h1{font-size:16px;font-weight:700;letter-spacing:-.2px}
+  .top .sub{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .icon-btn{margin-left:auto;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;color:var(--ink-2);display:grid;place-items:center;cursor:pointer;transition:.18s}
+  .icon-btn:hover{border-color:var(--line-strong);color:var(--ink)}
+  .icon-btn svg{width:16px;height:16px}
+
+  /* 转盘 */
+  .wheel-card{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 14px 14px;
+    box-shadow:var(--shadow);position:relative;
+  }
+  .wheel-wrap{position:relative;width:100%;max-width:330px;margin:0 auto}
+  .wheel-wrap svg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 18px rgba(20,24,31,.12))}
+  .pointer{
+    position:absolute;top:-3px;left:50%;transform:translateX(-50%);z-index:3;
+    width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;
+    border-top:18px solid var(--ink);filter:drop-shadow(0 2px 3px rgba(20,24,31,.22));
+  }
+  .hub{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:54px;height:54px;border-radius:50%;background:#fff;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(20,24,31,.13);display:grid;place-items:center;
+    font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;transition:transform .25s var(--spring);
+  }
+  .hub:active{transform:translate(-50%,-50%) scale(.94)}
+
+  .spin{
+    width:100%;height:52px;border:0;border-radius:14px;background:var(--ink);color:#fff;
+    font-size:16px;font-weight:700;letter-spacing:.2px;cursor:pointer;margin-top:14px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .28s var(--spring),background .18s,opacity .2s;
+  }
+  .spin:hover:not([disabled]){background:#232a36}
+  .spin:active:not([disabled]){transform:scale(.986)}
+  .spin[disabled]{opacity:.45;cursor:not-allowed}
+  .spin .dots{display:none;gap:4px}
+  .spin.spinning .dots{display:inline-flex}
+  .spin.spinning .ico{display:none}
+  .spin svg.ico{width:17px;height:17px}
+  .dots i{width:5px;height:5px;border-radius:50%;background:#fff;opacity:.5;animation:blink 1s infinite}
+  .dots i:nth-child(2){animation-delay:.15s}
+  .dots i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+  .hint{margin-top:9px;text-align:center;font-size:11.5px;color:var(--ink-3)}
+
+  /* 选项面板 */
+  .panel{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .panel-head{display:flex;align-items:center;gap:8px;padding:13px 14px;border-bottom:1px solid var(--line)}
+  .panel-head b{font-size:13px;font-weight:600}
+  .panel-head .count{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .panel-head .tools{margin-left:auto;display:flex;gap:6px}
+  .mini{font-size:11.5px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:5px 9px;cursor:pointer;transition:.16s}
+  .mini:hover{border-color:var(--line-strong);color:var(--ink)}
+  .mini.danger{color:var(--danger)}
+  .items{padding:6px}
+  .item{display:flex;align-items:center;gap:7px;padding:5px 6px}
+  .item .idx{width:16px;text-align:center;font-size:11px;color:var(--ink-3);flex:none}
+  .item input{
+    flex:1;min-width:0;height:36px;border:1px solid transparent;border-radius:9px;background:#f7f8fa;
+    padding:0 10px;font-size:14px;color:var(--ink);transition:.16s;font-family:inherit;
+  }
+  .item input:focus{outline:0;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(47,91,215,.12)}
+  .item .del{width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:var(--ink-3);
+    cursor:pointer;display:grid;place-items:center;flex:none;transition:.16s}
+  .item .del:hover{background:#fdf0f2;color:var(--danger)}
+  .item .del svg{width:13px;height:13px}
+  .empty{padding:22px 12px;text-align:center;color:var(--ink-3);font-size:12.5px;line-height:1.7}
+  .panel-foot{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line)}
+  .btn{flex:1;height:38px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.18s;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn:hover{border-color:#c2c9d6}
+  .btn.primary{background:var(--accent-2);border-color:#dbe4ff;color:var(--accent)}
+  .btn.primary:hover{background:#e4ebff}
+  .btn svg{width:14px;height:14px}
+
+  footer{margin-top:16px;text-align:center;font-size:11px;color:var(--ink-3);line-height:1.7}
+  footer a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+
+  /* 结果弹层 */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;z-index:40;
+    background:rgba(20,24,31,.42);backdrop-filter:blur(3px)}
+  .modal.on{display:flex;animation:fade .22s var(--ease)}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .result{
+    width:100%;max-width:330px;background:#fff;border-radius:20px;border:1px solid var(--line);
+    box-shadow:0 30px 70px -24px rgba(20,24,31,.5);padding:24px 20px 18px;text-align:center;
+    transform:scale(.74);opacity:0;animation:pop .5s var(--spring) .05s forwards;
+  }
+  @keyframes pop{0%{transform:scale(.74);opacity:0}64%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
+  .result .kicker{font-size:11px;letter-spacing:.22em;color:var(--ink-3);text-transform:uppercase}
+  .result .name{font-size:30px;font-weight:800;letter-spacing:-.6px;margin:8px 0 4px;line-height:1.2;word-break:break-word}
+  .result .name img{width:104px;height:104px;border-radius:14px;display:block;margin:6px auto 2px;object-fit:cover}
+  .result .shock{width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 12px;border:3px solid #fff;box-shadow:0 8px 20px -8px rgba(35,29,22,.4);transform:scale(.4) rotate(-10deg);opacity:0;animation:jump .6s var(--spring) .16s forwards}
+  @keyframes jump{0%{transform:scale(.4) rotate(-10deg);opacity:0}62%{transform:scale(1.12) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+  .result .hintline{font-size:12.5px;color:var(--ink-2);margin-bottom:16px}
+  .rbtns{display:flex;gap:9px}
+  .rbtns button{flex:1;height:44px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--ink);transition:.18s}
+  .rbtns button.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .rbtns button:hover{transform:translateY(-1px)}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translate(-50%,12px);opacity:0;pointer-events:none;
+    background:rgba(20,24,31,.92);color:#fff;font-size:12.5px;padding:10px 15px;border-radius:11px;
+    transition:.26s var(--ease);z-index:60;max-width:80vw;text-align:center;
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:380px){ .shell{max-width:100%} .panel-head .tools .mini{padding:5px 7px} }
+  /* 人机验证门 */
+  .gate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px 18px;
+    background:var(--bg);transition:opacity .32s var(--ease),transform .32s var(--ease)}
+  .gate.out{opacity:0;transform:scale(.985);pointer-events:none}
+  .gate-card{width:100%;max-width:350px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--shadow);padding:24px 20px 20px;text-align:center}
+  .gate-card h2{font-size:16px;font-weight:700;margin-bottom:6px}
+  .gate-card p{font-size:12.5px;color:var(--ink-2)}
+  .gate-mark{width:38px;height:38px;border-radius:11px;background:var(--ink);display:grid;place-items:center;margin:0 auto 14px}
+  .gate-mark svg{width:18px;height:18px}
+  .ts-wrap{display:flex;justify-content:center;margin:18px 0 6px;min-height:66px}
+  .gate-status{font-size:11.5px;color:var(--ink-3);min-height:18px}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 19.2 6v5.4c0 4.3-3 8.2-7.2 9.4-4.2-1.2-7.2-5.1-7.2-9.4V6L12 3.2Z" fill="#fff"/></svg>
+    </div>
+    <h2>请完成人机验证</h2>
+    <p>验证通过后进入转盘</p>
+    <div class="ts-wrap">
+      <div class="cf-turnstile"
+           data-sitekey="0x4AAAAAAGBkzGCJCGI7dKxC"
+           data-theme="light"
+           data-language="zh-cn"
+           data-callback="onTsOk"
+           data-error-callback="onTsErr"></div>
+    </div>
+    <div class="gate-status" id="gateStatus">正在加载验证组件…</div>
+  </div>
+</div>
+<div class="shell">
+
+  <div class="top">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.9"/><path d="M12 3v9l6.4 6.4" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <h1>今天吃什么？</h1>
+    </div>
+    <button class="icon-btn" id="mute" title="音效开关" aria-label="音效开关">
+      <svg id="muteIcon" viewBox="0 0 24 24" fill="none"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 8.6a4.6 4.6 0 0 1 0 6.8M18.6 6a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="wheel-card">
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <svg id="wheel" viewBox="0 0 320 320" role="img" aria-label="转盘">
+        <g id="slices"></g>
+        <g id="labels"></g>
+      </svg>
+      <div class="hub" id="hub">转</div>
+    </div>
+    <button class="spin" id="spin">
+      <svg class="ico" viewBox="0 0 24 24" fill="none"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.9"/></svg>
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span id="spinLabel">开始转</span>
+    </button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <b>选项</b>
+      <span class="count" id="count">0 / 24</span>
+      <div class="tools">
+        <button class="mini" id="addBtn">+ 添加</button>
+        <button class="mini" id="demoBtn">重置</button>
+        <button class="mini danger" id="clearBtn">清空</button>
+      </div>
+    </div>
+    <div class="items" id="items"></div>
+    <div class="panel-foot">
+      <button class="btn primary" id="shareBtn">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 13.5 15 9M9 10.5 15 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="6.5" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="7" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="17" r="2.6" stroke="currentColor" stroke-width="1.8"/></svg>
+        复制分享链接
+      </button>
+      <button class="btn" id="noRepeatBtn">不重复：关</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal" id="modal">
+  <div class="result">
+    <img class="shock" src="shock.jpg" alt="">
+    <div class="kicker">今天就吃这个</div>
+    <div class="name" id="rname">—</div>
+    <div class="hintline" id="rhint">已抽完，不许反悔</div>
+    <div class="rbtns">
+      <button type="button" id="againBtn">再抽一次</button>
+      <button type="button" class="primary" id="okBtn">就它了</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MAX = 24;
+  var STORE = 'food.items.v1';
+  var DEMO = ['卤肉饭', '6元快餐', '二四牛腩粉', '盖饭', '麦德旺', '得意快餐', '奶茶', '螺蛳粉', '鱼粉'];
+  var items = [];
+  var noRepeat = false;
+  var used = [];           // 不重复模式下已抽到的索引
+
+  /* ---------- 工具 ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove('on'); }, 1800);
+  }
+  function b64encode(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64decode(str) {
+    try {
+      var s = str.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      return decodeURIComponent(escape(atob(s)));
+    } catch (e) { return null; }
+  }
+
+  /* ---------- 数据 ---------- */
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (raw) { var v = JSON.parse(raw); if (Array.isArray(v) && v.length) return v.slice(0, MAX); }
+    } catch (e) {}
+    return DEMO.slice();
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(items)); } catch (e) {}
+  }
+  function hashImport() {
+    var m = location.hash.match(/[#&]d=([^&]+)/);
+    if (!m) return false;
+    var json = b64decode(m[1]);
+    if (!json) return false;
+    try {
+      var arr = JSON.parse(json);
+      if (Array.isArray(arr) && arr.length) {
+        items = arr.map(function (s) { return String(s).slice(0, 40); }).slice(0, MAX);
+        save();
+        history.replaceState(null, '', location.pathname);
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /* ---------- 音效（Web Audio 合成） ---------- */
+  var AC = null, muted = false;
+  function ac() {
+    if (muted) return null;
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function tick(speed) {
+    var a = ac(); if (!a) return;
+    var t = a.currentTime;
+    var o = a.createOscillator(), g = a.createGain(), f = a.createBiquadFilter();
+    o.type = 'square';
+    var freq = 1100 + Math.min(800, (speed || 0) * 240);
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(freq * .7, t + .034);
+    f.type = 'bandpass'; f.frequency.value = freq * 1.1; f.Q.value = 1.2;
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(.08, t + .006);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .048);
+    o.connect(f); f.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + .06);
+  }
+  function ding() {
+    var a = ac(); if (!a) return;
+    var t = a.currentTime;
+    [784, 1046.5].forEach(function (freq, i) {
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = 'triangle'; o.frequency.value = freq;
+      var st = t + i * .1;
+      g.gain.setValueAtTime(.0001, st);
+      g.gain.exponentialRampToValueAtTime(.15, st + .011);
+      g.gain.exponentialRampToValueAtTime(.0001, st + .32);
+      o.connect(g); g.connect(a.destination);
+      o.start(st); o.stop(st + .34);
+    });
+  }
+  var muteIcon = $('muteIcon');
+  var ON = '<path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 8.6a4.6 4.6 0 0 1 0 6.8M18.6 6a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>';
+  var OFF = '<path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>';
+  $('mute').addEventListener('click', function () {
+    muted = !muted;
+    muteIcon.innerHTML = muted ? OFF : ON;
+    toast(muted ? '音效已关闭' : '音效已开启');
+  });
+
+  /* ---------- 画转盘 ---------- */
+  var NS = 'http://www.w3.org/2000/svg';
+  var CX = 160, CY = 160, R = 152;
+  var slicesG = $('slices'), labelsG = $('labels');
+  var labelEls = [];
+  var rotation = 0;
+
+  function pt(r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+  }
+  function color(i, n) {
+    var hue = 18 + i * (150 / Math.max(n, 2));
+    return 'hsl(' + hue.toFixed(0) + ' 58% 86%)';
+  }
+
+  function render() {
+    slicesG.innerHTML = '';
+    labelsG.innerHTML = '';
+    labelEls = [];
+    var n = items.length;
+
+    if (n === 0) {
+      var c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', CX); c.setAttribute('cy', CY); c.setAttribute('r', R);
+      c.setAttribute('fill', '#f4f5f8');
+      c.setAttribute('stroke', '#e6e9ef');
+      slicesG.appendChild(c);
+      return;
+    }
+    if (n === 1) {
+      var c1 = document.createElementNS(NS, 'circle');
+      c1.setAttribute('cx', CX); c1.setAttribute('cy', CY); c1.setAttribute('r', R);
+      c1.setAttribute('fill', color(0, 3));
+      c1.setAttribute('stroke', '#fff'); c1.setAttribute('stroke-width', '1.6');
+      slicesG.appendChild(c1);
+      var t1 = document.createElementNS(NS, 'text');
+      t1.setAttribute('x', CX); t1.setAttribute('y', CY - 40);
+      t1.setAttribute('text-anchor', 'middle');
+      t1.setAttribute('font-size', '14'); t1.setAttribute('font-weight', '600');
+      t1.setAttribute('fill', '#3b2f23');
+      t1.setAttribute('font-family', '-apple-system,"PingFang SC","Noto Sans SC",sans-serif');
+      t1.textContent = (items[0] || '').slice(0, 10);
+      labelsG.appendChild(t1);
+      return;
+    }
+
+    var seg = 360 / n;
+    var fontSize = n <= 8 ? 14 : (n <= 14 ? 12.5 : 11);
+
+    items.forEach(function (name, i) {
+      var a0 = i * seg, a1 = a0 + seg;
+      var p0 = pt(R, a0), p1 = pt(R, a1);
+      var large = seg > 180 ? 1 : 0;
+      var path = document.createElementNS(NS, 'path');
+      path.setAttribute('d',
+        'M' + CX + ',' + CY +
+        ' L' + p0[0].toFixed(2) + ',' + p0[1].toFixed(2) +
+        ' A' + R + ',' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(2) + ',' + p1[1].toFixed(2) + ' Z');
+      path.setAttribute('fill', n === 1 ? color(0, 3) : color(i, n));
+      path.setAttribute('stroke', '#fffdf9');
+      path.setAttribute('stroke-width', '1.6');
+      slicesG.appendChild(path);
+
+      var blank = !String(name || '').trim();
+      if (blank) {
+        var sz = n <= 8 ? 27 : (n <= 14 ? 23 : 19);
+        var img = document.createElementNS(NS, 'image');
+        img.setAttribute('href', 'gummu.jpg');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', 'gummu.jpg');
+        img.setAttribute('width', sz);
+        img.setAttribute('height', sz);
+        img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        labelsG.appendChild(img);
+        labelEls.push({ el: img, mid: i * seg + seg / 2, type: 'img', size: sz });
+        return;
+      }
+      var t = document.createElementNS(NS, 'text');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('dominant-baseline', 'middle');
+      t.setAttribute('font-size', String(fontSize));
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', '#3b2f23');
+      t.setAttribute('font-family', '-apple-system,"PingFang SC","Noto Sans SC",sans-serif');
+      var show = name.length > 8 ? name.slice(0, 8) + '…' : name;
+      t.textContent = show;
+      labelsG.appendChild(t);
+      labelEls.push({ el: t, mid: i * seg + seg / 2, type: 'text' });
+    });
+    layout(rotation);
+  }
+
+  function layout(rot) {
+    for (var i = 0; i < labelEls.length; i++) {
+      var L = labelEls[i];
+      var n = items.length;
+      var rr = n > 12 ? R - 40 : R - 46;
+      var p = pt(rr, L.mid + rot);
+      if (L.type === 'img') {
+        L.el.setAttribute('x', (p[0] - L.size / 2).toFixed(2));
+        L.el.setAttribute('y', (p[1] - L.size / 2).toFixed(2));
+      } else {
+        L.el.setAttribute('x', p[0].toFixed(2));
+        L.el.setAttribute('y', p[1].toFixed(2));
+      }
+    }
+  }
+
+  /* ---------- 选项列表 UI ---------- */
+  var itemsEl = $('items'), countEl = $('count'), spinBtn = $('spin'), spinLabel = $('spinLabel');
+
+  function updateSpinState() {
+    spinBtn.disabled = items.length < 2 || spinning;
+  }
+
+  function renderItems() {
+    countEl.textContent = items.length + ' / ' + MAX;
+    itemsEl.innerHTML = '';
+    items.forEach(function (val, i) {
+      var row = document.createElement('div');
+      row.className = 'item';
+
+      var idx = document.createElement('span');
+      idx.className = 'idx';
+      idx.textContent = String(i + 1);
+
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = val;
+      inp.maxLength = 40;
+      if (!inp.value.trim()) inp.placeholder = '滚木';
+      inp.setAttribute('aria-label', '第 ' + (i + 1) + ' 个选项');
+      inp.addEventListener('input', function () {
+        items[i] = inp.value.slice(0, 40);
+        save();
+        render();
+        updateSpinState();
+      });
+
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.type = 'button';
+      del.setAttribute('aria-label', '删除第 ' + (i + 1) + ' 个选项');
+      del.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      del.addEventListener('click', function () {
+        items.splice(i, 1);
+        used = [];
+        save(); renderItems(); render(); updateSpinState();
+      });
+
+      row.appendChild(idx); row.appendChild(inp); row.appendChild(del);
+      itemsEl.appendChild(row);
+    });
+    render();
+    updateSpinState();
+  }
+
+  function addItem() {
+    if (items.length >= MAX) { toast('最多 ' + MAX + ' 个选项'); return; }
+    items.push('');
+    save(); renderItems();
+    var inputs = itemsEl.querySelectorAll('input');
+    var last = inputs[inputs.length - 1];
+    if (last) { last.focus(); last.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  }
+
+  $('addBtn').addEventListener('click', addItem);
+  $('demoBtn').addEventListener('click', function () {
+    items = DEMO.slice(); used = [];
+    save(); renderItems(); toast('已恢复默认');
+  });
+  $('clearBtn').addEventListener('click', function () {
+    if (!items.length) return;
+    items = []; used = [];
+    save(); renderItems(); toast('已清空');
+  });
+
+  /* ---------- 不重复 ---------- */
+  $('noRepeatBtn').addEventListener('click', function () {
+    noRepeat = !noRepeat;
+    used = [];
+    this.textContent = '不重复：' + (noRepeat ? '开' : '关');
+    this.style.color = noRepeat ? 'var(--green)' : '';
+    this.style.borderColor = noRepeat ? 'rgba(21,145,95,.35)' : '';
+    updateSpinState();
+    toast(noRepeat ? '抽过的选项暂时不会重复出现' : '已关闭不重复');
+  });
+
+  /* ---------- 分享 ---------- */
+  $('shareBtn').addEventListener('click', function () {
+    var clean = items.filter(function (s) { return s.trim(); });
+    if (!clean.length) { toast('先加几个选项吧'); return; }
+    var url = location.origin + location.pathname + '#d=' + b64encode(JSON.stringify(clean));
+    function done() { toast('分享链接已复制'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () { fallback(url); });
+    } else { fallback(url); }
+    function fallback(u) {
+      var ta = document.createElement('textarea');
+      ta.value = u; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，长按链接手动复制'); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  /* ---------- 转动 ---------- */
+  var spinning = false, lastTick = 0;
+  var modal = $('modal'), rname = $('rname');
+
+  function pickIndex() {
+    if (!noRepeat) return Math.floor(Math.random() * items.length);
+    var pool = [];
+    for (var i = 0; i < items.length; i++) if (used.indexOf(i) < 0) pool.push(i);
+    if (!pool.length) { used = []; return pickIndex(); }
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function spin() {
+    if (items.length < 2 || spinning) return;
+    spinning = true;
+    spinBtn.classList.add('spinning');
+    spinBtn.disabled = true;
+    spinLabel.textContent = '转动中…';
+
+    var idx = pickIndex();
+    var seg = 360 / items.length;
+    var mid = idx * seg + seg / 2;
+    var base = ((-mid) % 360 + 360) % 360;
+    var current = ((rotation % 360) + 360) % 360;
+    var delta = base - current;
+    while (delta < 0) delta += 360;
+    var turns = 4 + Math.floor(Math.random() * 2);
+    var from = rotation, to = rotation + delta + turns * 360;
+    var dur = 3800 + Math.random() * 700;
+    var start = performance.now();
+    var lastSlice = Math.floor((((rotation % 360) + 360) % 360) / seg);
+
+    function ease(t) { return 1 - Math.pow(1 - t, 5); }
+    function frame(now) {
+      var t = Math.min(1, (now - start) / dur);
+      var e = ease(t);
+      rotation = from + (to - from) * e;
+      slicesG.setAttribute('transform', 'rotate(' + rotation.toFixed(2) + ' ' + CX + ' ' + CY + ')');
+      layout(rotation);
+
+      var slice = Math.floor((((rotation % 360) + 360) % 360) / seg);
+      if (slice !== lastSlice) { lastSlice = slice; tick(1 - t); }
+
+      if (t < 1) requestAnimationFrame(frame);
+      else finish(idx);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function finish(idx) {
+    spinning = false;
+    spinBtn.classList.remove('spinning');
+    spinLabel.textContent = '再转一次';
+    if (noRepeat && used.indexOf(idx) < 0) used.push(idx);
+    var name = String(items[idx] || '').trim();
+    if (!name) { rname.innerHTML = '<img src="gummu.jpg" alt="滚木">'; }
+    else { rname.textContent = name; }
+    $('rhint').textContent = noRepeat
+      ? '本次不重复 · 还剩 ' + Math.max(0, items.length - used.length) + ' 个没抽到'
+      : '就是它了';
+    modal.classList.add('on');
+    ding();
+    updateSpinState();
+  }
+
+  spinBtn.addEventListener('click', spin);
+  $('hub').addEventListener('click', spin);
+  $('okBtn').addEventListener('click', function () { modal.classList.remove('on'); });
+  $('againBtn').addEventListener('click', function () { modal.classList.remove('on'); setTimeout(spin, 240); });
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('on'); });
+
+  /* ---------- 启动 ---------- */
+  var fromShare = hashImport();
+  if (!fromShare) items = load();
+  renderItems();
+  if (fromShare) setTimeout(function () { toast('已载入分享的选项'); }, 300);
+})();
+</script>
+<script>
+(function () {
+  var gate = document.getElementById('gate');
+  var status = document.getElementById('gateStatus');
+  var done = false;
+  function enter() {
+    if (done) return;
+    done = true;
+    status.textContent = '验证通过';
+    gate.classList.add('out');
+    setTimeout(function () { gate.style.display = 'none'; }, 340);
+  }
+  window.onTsOk = enter;
+  window.onTsErr = function () {
+    if (done) return;
+    status.textContent = '验证组件加载失败，已自动放行';
+    enter();
+  };
+  setTimeout(function () {
+    if (!done) { status.textContent = '验证组件加载超时，已自动放行'; enter(); }
+  }, 12000);
+})();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</body>
+</html>
